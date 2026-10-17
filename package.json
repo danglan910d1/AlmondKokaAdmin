@@ -1,0 +1,9 @@
+{
+  "name": "almond-koka-admin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -p 3002",
+    "build": "node sync-env.js"
+  }
+}

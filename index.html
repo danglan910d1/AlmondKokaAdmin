@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Trị Kho - Glico Almond Koka</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo-badge">GLICO ALMOND KOKA</div>
+            <h1>QUẢN LÝ KHO QUÀ TẶNG</h1>
+            <p class="subtitle">Hệ thống đồng bộ dữ liệu tồn kho theo khu vực và cửa hàng</p>
+
+            <!-- Thanh kết nối & Kiểm tra / Khởi tạo Google Sheets -->
+            <div class="connection-bar">
+                <div class="conn-info">
+                    <span class="conn-dot" id="conn-dot"></span>
+                    <span class="conn-label">Trạng thái kết nối Google Sheets:</span>
+                    <span id="conn-status-text" class="conn-status-text">Đang kiểm tra...</span>
+                </div>
+                <div class="conn-actions">
+                    <button type="button" id="btn-init-database" class="btn-init-db">
+                        ⚡ KIỂM TRA & KHỞI TẠO DATABASE (INIT)
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="card">
+            <!-- Tabs Chuyển đổi -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="nhap">NHẬP KHO MỚI</button>
+                <button class="tab-btn" data-tab="capnhat">BÙ / TRỪ TỒN KHO</button>
+                <button class="tab-btn" data-tab="reset">🔄 RESET THỬ NGHIỆM</button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="global-loading" class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Đang kết nối hệ thống kho...</div>
+            </div>
+
+            <!-- Alert Notification -->
+            <div id="alert-banner" class="alert hidden"></div>
+
+            <!-- TAB 1: NHẬP KHO MỚI -->
+            <div id="tab-nhap" class="tab-content hidden">
+                <section class="section">
+                    <h2>1. CHỌN ĐỊA ĐIỂM CỬA HÀNG</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nhap-region">Khu vực *</label>
+                            <select id="nhap-region" class="form-control">
+                                <option value="HCM" selected>TP. Hồ Chí Minh (HCM)</option>
+                                <option value="HN">Hà Nội (HN)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nhap-store-input">Tên Cửa Hàng / Điểm tổ chức *</label>
+                            <div class="combobox-wrapper" id="nhap-store-combobox">
+                                <input type="text" id="nhap-store-input" class="combobox-input" placeholder="Chọn hoặc nhập tên cửa hàng mới..." autocomplete="off">
+                                <span class="combobox-arrow">▼</span>
+                                <div class="combobox-dropdown hidden" id="nhap-store-dropdown"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>2. DANH SÁCH QUÀ TẶNG NHẬP KHO</h2>
+                    <div id="nhap-items-container" class="items-list">
+                        <!-- Dynamic item rows will be injected here -->
+                    </div>
+
+                    <button type="button" id="add-item-btn" class="btn btn-secondary">
+                        + THÊM DÒNG QUÀ TẶNG
+                    </button>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="nhap-ghi-chu">Ghi chú đợt nhập hàng</label>
+                        <input type="text" id="nhap-ghi-chu" class="form-control" placeholder="Ví dụ: Nhập hàng đợt 1, bổ sung cuối tuần...">
+                    </div>
+
+                    <button type="button" id="submit-nhap-btn" class="btn btn-primary">
+                        LƯU DỮ LIỆU NHẬP KHO
+                    </button>
+                </section>
+            </div>
+
+            <!-- TAB 2: CẬP NHẬT ĐIỀU CHỈNH KHO (BÙ / TRỪ) -->
+            <div id="tab-capnhat" class="tab-content hidden">
+                <section class="section">
+                    <h2>1. CHỌN ĐỊA ĐIỂM CỬA HÀNG</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cap-region">Khu vực *</label>
+                            <select id="cap-region" class="form-control">
+                                <option value="HCM" selected>TP. Hồ Chí Minh (HCM)</option>
+                                <option value="HN">Hà Nội (HN)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cap-store">Tên Cửa Hàng *</label>
+                            <select id="cap-store" class="form-control">
+                                <option value="">-- Đang tải danh sách cửa hàng --</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>2. BẢNG BÙ / TRỪ TỒN KHO THEO MÓN QUÀ</h2>
+                    <p class="section-desc">Nhập số dương (vd: <b>10</b>) để bù thêm quà, hoặc số âm (vd: <b>-5</b>) để trừ hao hụt/hỏng móp.</p>
+
+                    <div class="table-container">
+                        <table class="stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên Quà Tặng</th>
+                                    <th style="width: 110px; text-align: center;">Tồn Hiện Tại</th>
+                                    <th style="width: 140px; text-align: center;">Bù / Trừ (+/-)</th>
+                                    <th style="width: 110px; text-align: center;">Tồn Dự Kiến</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cap-table-body">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                                        Vui lòng chọn cửa hàng để xem danh sách tồn kho
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="cap-ghi-chu">Lý do điều chỉnh (Bắt buộc) *</label>
+                        <input type="text" id="cap-ghi-chu" class="form-control" placeholder="Ví dụ: Bù hàng hỏng móp bao bì, kiểm kê thực tế lệch...">
+                    </div>
+
+                    <button type="button" id="submit-cap-btn" class="btn btn-primary">
+                        XÁC NHẬN LƯU ĐIỀU CHỈNH KHO
+                    </button>
+                </section>
+            </div>
+
+            <!-- TAB 3: RESET DỮ LIỆU THỬ NGHIỆM -->
+            <div id="tab-reset" class="tab-content hidden">
+                <section class="section">
+                    <h2 style="color: #DC2626; font-size: 16px;">⚠️ KHU VỰC RESET DỮ LIỆU THỬ NGHIỆM</h2>
+                    <p class="section-desc" style="font-size: 15px; margin-top: 6px;">
+                        Chức năng dùng để thiết lập lại số lượng quà trong kho cho các đợt chạy thử nghiệm hoặc chuẩn bị trước sự kiện:
+                    </p>
+
+                    <div style="display: flex; flex-direction: column; gap: 18px; margin-top: 20px;">
+                        <!-- Thẻ Reset 1: 100 cái mỗi món -->
+                        <div class="reset-card" style="border-left: 5px solid #F59E0B; background-color: #FFFDF9;">
+                            <div>
+                                <h3 style="font-size: 16.5px; font-weight: 800; color: #1F2937;">1. Reset kho có sẵn dữ liệu thử nghiệm (100 cái mỗi món)</h3>
+                                <p style="font-size: 14.5px; color: var(--text-muted); margin-top: 6px; line-height: 1.45;">
+                                    Đưa toàn bộ số lượng tồn kho của tất cả các phần quà tại các cửa hàng (Mê Linh Point, Lancaster...) về <b>100 cái</b> để sẵn sàng test quay thưởng.
+                                </p>
+                            </div>
+                            <button type="button" id="btn-reset-stock-100" class="btn btn-warning" style="width: auto; padding: 13px 24px; margin: 0; white-space: nowrap; font-size: 15.5px;">
+                                📦 Đặt Tất Cả = 100 Cái
+                            </button>
+                        </div>
+
+                        <!-- Thẻ Reset 2: Reset toàn bộ vòng quay & tồn kho về 0 -->
+                        <div class="reset-card" style="border-left: 5px solid #DC2626; background-color: #FEF2F2; border-color: #FECACA;">
+                            <div>
+                                <h3 style="font-size: 16.5px; font-weight: 800; color: #DC2626;">2. Reset toàn bộ vòng quay & Đặt kho về 0 (Trắng kho ban đầu)</h3>
+                                <p style="font-size: 14.5px; color: #991B1B; margin-top: 6px; line-height: 1.45;">
+                                    Xóa sạch toàn bộ lịch sử kết quả vòng quay, xóa lịch sử nhập/điều chỉnh, đưa toàn bộ tồn kho tất cả quà tặng tại các cửa hàng về <b>0</b>. Khởi tạo lại hệ thống như mới hoàn toàn.
+                                </p>
+                            </div>
+                            <button type="button" id="btn-reset-stock-0" class="btn" style="background-color: #DC2626; color: #FFF; width: auto; padding: 13px 24px; margin: 0; white-space: nowrap; font-size: 15.5px;">
+                                🧹 Reset Toàn Bộ Vòng Quay & Đặt Về 0
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script module -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
