@@ -12,15 +12,22 @@ const DEFAULT_GIFTS = [
   { id: '7', name: 'Pocky Strawberry flavour 39g' },
   { id: '8', name: 'Pocky Milky Matcha flavour 40g' },
   { id: '9', name: 'Pejoy Belgium Chocolate' },
-  { id: '10', name: 'Pejoy Hokkaido Milk' },
+  { id: '10', name: 'Pejoy Madagascar Vanilla Cream' },
 ];
 
 function loadGiftCatalog() {
   try {
     const saved = localStorage.getItem('almond_koka_admin_catalog');
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      let parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        parsed = parsed.map((g) =>
+          g.id === '10' || (g.name && g.name.includes('Hokkaido'))
+            ? { ...g, name: 'Pejoy Madagascar Vanilla Cream' }
+            : g
+        );
+        return parsed;
+      }
     }
   } catch (e) {}
   return [...DEFAULT_GIFTS];

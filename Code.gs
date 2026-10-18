@@ -31,7 +31,7 @@ const DEFAULT_GIFTS = [
   { id: "7", name: "Pocky Strawberry flavour 39g", defaultStock: 100 },
   { id: "8", name: "Pocky Milky Matcha flavour 40g", defaultStock: 100 },
   { id: "9", name: "Pejoy Belgium Chocolate", defaultStock: 100 },
-  { id: "10", name: "Pejoy Hokkaido Milk", defaultStock: 100 },
+  { id: "10", name: "Pejoy Madagascar Vanilla Cream", defaultStock: 100 },
 ];
 
 // Tên các Sheets
@@ -147,6 +147,26 @@ function initDatabase() {
       .setBackground("#16a34a")
       .setFontColor("#ffffff");
   }
+
+  // Tự động chuẩn hóa cập nhật quà 10 thành "Pejoy Madagascar Vanilla Cream" nếu Sheet cũ còn tên "Hokkaido"
+  try {
+    if (sGifts && sGifts.getLastRow() > 1) {
+      const gVals = sGifts.getDataRange().getValues();
+      for (let r = 1; r < gVals.length; r++) {
+        if (String(gVals[r][0]).trim() === "10" || String(gVals[r][1]).indexOf("Hokkaido") !== -1) {
+          sGifts.getRange(r + 1, 2).setValue("Pejoy Madagascar Vanilla Cream");
+        }
+      }
+    }
+    if (sStock && sStock.getLastRow() > 1) {
+      const stVals = sStock.getDataRange().getValues();
+      for (let r = 1; r < stVals.length; r++) {
+        if (String(stVals[r][1]).trim() === "10" || String(stVals[r][2]).indexOf("Hokkaido") !== -1) {
+          sStock.getRange(r + 1, 3).setValue("Pejoy Madagascar Vanilla Cream");
+        }
+      }
+    }
+  } catch (e) {}
 
   return { success: true, message: "Khởi tạo cơ sở dữ liệu thành công!" };
 }
@@ -604,7 +624,11 @@ function executeResetAllToZero() {
         const gid = String(gData[i][0]).trim();
         const gname = String(gData[i][1]).trim();
         if (gid && gname) {
-          customGifts.push({ id: gid, name: gname });
+          const finalName =
+            gid === "10" || gname.indexOf("Hokkaido") !== -1
+              ? "Pejoy Madagascar Vanilla Cream"
+              : gname;
+          customGifts.push({ id: gid, name: finalName });
         }
       }
       if (customGifts.length > 0) gifts = customGifts;
