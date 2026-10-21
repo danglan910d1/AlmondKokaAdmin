@@ -22,16 +22,16 @@ const DEFAULT_STORES = [
 ];
 
 const DEFAULT_GIFTS = [
-  { id: "1", name: "Almond Koka Unsweetened 180ml", defaultStock: 100 },
-  { id: "2", name: "Almond Koka Original 180ml", defaultStock: 100 },
-  { id: "3", name: "Pretz Nori Seaweed", defaultStock: 100 },
-  { id: "4", name: "Pretz Truffle Cheese", defaultStock: 100 },
-  { id: "5", name: "Pocky Chocolate flavour 40g", defaultStock: 100 },
-  { id: "6", name: "Pocky Cookies & Cream flavour 40g", defaultStock: 100 },
-  { id: "7", name: "Pocky Strawberry flavour 39g", defaultStock: 100 },
-  { id: "8", name: "Pocky Milky Matcha flavour 40g", defaultStock: 100 },
-  { id: "9", name: "Pejoy Belgium Chocolate", defaultStock: 100 },
-  { id: "10", name: "Pejoy Madagascar Vanilla Cream", defaultStock: 100 },
+  { id: "1", name: "Almond Koka Unsweetened 180ml", defaultStock: 0 },
+  { id: "2", name: "Almond Koka Original 180ml", defaultStock: 0 },
+  { id: "3", name: "Pretz Nori Seaweed", defaultStock: 0 },
+  { id: "4", name: "Pretz Truffle Cheese", defaultStock: 0 },
+  { id: "5", name: "Pocky Chocolate flavour 40g", defaultStock: 0 },
+  { id: "6", name: "Pocky Cookies & Cream flavour 40g", defaultStock: 0 },
+  { id: "7", name: "Pocky Strawberry flavour 39g", defaultStock: 0 },
+  { id: "8", name: "Pocky Milky Matcha flavour 40g", defaultStock: 0 },
+  { id: "9", name: "Pejoy Belgium Chocolate", defaultStock: 0 },
+  { id: "10", name: "Pejoy Madagascar Vanilla Cream", defaultStock: 0 },
 ];
 
 // Tên các Sheets
@@ -697,7 +697,7 @@ function executeResetAll() {
     const stores = getStoresList();
     stores.forEach((st) => {
       DEFAULT_GIFTS.forEach((g) => {
-        sStock.appendRow([st.id, g.id, g.name, 50]);
+        sStock.appendRow([st.id, g.id, g.name, 0]);
       });
     });
   }
