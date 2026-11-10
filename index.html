@@ -37,6 +37,7 @@
                 <button class="tab-btn active" data-tab="nhap">NHẬP KHO MỚI</button>
                 <button class="tab-btn" data-tab="capnhat">BÙ / TRỪ TỒN KHO</button>
                 <button class="tab-btn" data-tab="reset">🔄 RESET THỬ NGHIỆM</button>
+                <button class="tab-btn" data-tab="diadiem">🏪 QUẢN LÝ ĐỊA ĐIỂM</button>
             </div>
 
             <!-- Loading Indicator -->
@@ -186,7 +187,66 @@
                     </div>
                 </section>
             </div>
+
+            <!-- TAB 4: QUẢN LÝ ĐỊA ĐIỂM (KHÓA / XÓA) -->
+            <div id="tab-diadiem" class="tab-content hidden">
+                <section class="section">
+                    <h2>QUẢN LÝ ĐỊA ĐIỂM TỔ CHỨC</h2>
+                    <p class="section-desc">
+                        <b>Khóa:</b> người chơi vẫn thấy địa điểm trong game nhưng không chọn được.
+                        <b>Xóa:</b> ẩn địa điểm khỏi game (tồn kho và lịch sử vẫn giữ nguyên, có thể khôi phục lại).
+                        Mỗi thao tác đều cần nhập mật khẩu quản lý.
+                    </p>
+
+                    <div class="dd-toolbar">
+                        <div class="form-group">
+                            <label for="dd-region">Khu vực</label>
+                            <select id="dd-region" class="form-control">
+                                <option value="ALL" selected>Tất cả khu vực</option>
+                                <option value="HCM">TP. Hồ Chí Minh (HCM)</option>
+                                <option value="HN">Hà Nội (HN)</option>
+                            </select>
+                        </div>
+                        <button type="button" id="dd-refresh-btn" class="btn btn-secondary dd-refresh-btn">
+                            ⟳ TẢI LẠI DANH SÁCH
+                        </button>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Địa Điểm</th>
+                                    <th style="width: 110px; text-align: center;">Khu Vực</th>
+                                    <th style="width: 130px; text-align: center;">Trạng Thái</th>
+                                    <th style="width: 230px; text-align: center;">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dd-table-body">
+                                <tr>
+                                    <td colspan="4" class="dd-empty">Đang tải danh sách địa điểm...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
+    </div>
+
+    <!-- Hộp nhập mật khẩu: Khóa / Mở khóa / Xóa / Khôi phục địa điểm -->
+    <div id="dd-modal" class="dd-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dd-modal-title">
+        <div class="dd-modal-card">
+            <h3 id="dd-modal-title">Khóa địa điểm</h3>
+            <p id="dd-modal-store" class="dd-modal-store"></p>
+            <p id="dd-modal-desc" class="dd-modal-desc"></p>
+            <input type="password" id="dd-modal-password" class="form-control" placeholder="Nhập mật khẩu quản lý" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <p id="dd-modal-error" class="dd-modal-error hidden"></p>
+            <div class="dd-modal-actions">
+                <button type="button" id="dd-modal-cancel" class="btn btn-secondary">HỦY</button>
+                <button type="button" id="dd-modal-confirm" class="btn btn-primary">XÁC NHẬN</button>
+            </div>
+        </div>
     </div>
 
     <!-- Script module -->

@@ -742,3 +742,211 @@ header h1 {
     }
 }
 
+/* ==================== TAB 4: QUẢN LÝ ĐỊA ĐIỂM ==================== */
+.dd-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.dd-toolbar .form-group {
+    flex: 1 1 260px;
+    margin-bottom: 0;
+}
+
+.dd-refresh-btn {
+    width: auto;
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+.dd-refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.dd-empty {
+    text-align: center;
+    color: var(--text-muted) !important;
+    padding: 20px !important;
+}
+
+.dd-store-name {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.dd-store-id {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+}
+
+.dd-row-deleted .dd-store-name {
+    color: #9CA3AF;
+    text-decoration: line-through;
+}
+
+.dd-status {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.dd-status-active {
+    background: #ECFDF5;
+    color: #047857;
+    border: 1px solid #A7F3D0;
+}
+
+.dd-status-locked {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+.dd-status-deleted {
+    background: #F3F4F6;
+    color: #6B7280;
+    border: 1px solid #E5E7EB;
+}
+
+.dd-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.dd-action-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    background: #FFFFFF;
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.dd-action-lock:hover,
+.dd-action-unlock:hover {
+    background: #FEF3C7;
+    border-color: #FDE68A;
+    color: #92400E;
+}
+
+.dd-action-delete {
+    color: var(--danger);
+    border-color: #FECACA;
+}
+
+.dd-action-delete:hover {
+    background: #FEF2F2;
+}
+
+.dd-action-restore {
+    color: var(--success);
+    border-color: #A7F3D0;
+}
+
+.dd-action-restore:hover {
+    background: #ECFDF5;
+}
+
+/* Hộp nhập mật khẩu */
+.dd-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(45, 18, 10, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.dd-modal.hidden {
+    display: none;
+}
+
+.dd-modal-card {
+    width: 100%;
+    max-width: 400px;
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(65, 25, 4, 0.25);
+}
+
+.dd-modal-card h3 {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.dd-modal-store {
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary-hover);
+}
+
+.dd-modal-desc {
+    margin-top: 6px;
+    font-size: 14.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+}
+
+.dd-modal-card .form-control {
+    margin-top: 16px;
+    text-align: center;
+}
+
+.dd-modal-error {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--danger);
+}
+
+.dd-modal-error.hidden {
+    display: none;
+}
+
+.dd-modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.dd-modal-actions .btn {
+    margin-top: 0;
+    padding: 13px 16px;
+    font-size: 15px;
+}
+
+.dd-modal-actions .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary.dd-confirm-danger {
+    background-color: var(--danger);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+.btn-primary.dd-confirm-danger:hover {
+    background-color: #B91C1C;
+}

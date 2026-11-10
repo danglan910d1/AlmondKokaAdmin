@@ -877,3 +877,258 @@ async function initApp() {
 
 // Khởi chạy
 initApp();
+
+// ==================== TAB 4: QUẢN LÝ ĐỊA ĐIỂM (KHÓA / XÓA) ====================
+// Khối độc lập, không ảnh hưởng 3 tab kho ở trên.
+// Mật khẩu KHÔNG nằm trong code web: Apps Script kiểm tra (Script Properties: ADMIN_PASSWORD).
+const STORE_STATUS_INFO = {
+  active:  { label: 'Hoạt động', cls: 'dd-status-active' },
+  locked:  { label: 'Tạm khóa',  cls: 'dd-status-locked' },
+  deleted: { label: 'Đã xóa',    cls: 'dd-status-deleted' },
+};
+
+const STORE_ACTIONS = {
+  lock: {
+    status: 'locked', btn: '🔒 Khóa', title: 'Khóa địa điểm', confirm: 'XÁC NHẬN KHÓA', done: 'Đã khóa',
+    desc: 'Người chơi vẫn thấy địa điểm này trong game nhưng không chọn được.',
+  },
+  unlock: {
+    status: 'active', btn: '🔓 Mở khóa', title: 'Mở khóa địa điểm', confirm: 'XÁC NHẬN MỞ KHÓA', done: 'Đã mở khóa',
+    desc: 'Người chơi chọn lại được địa điểm này trong game.',
+  },
+  delete: {
+    status: 'deleted', btn: '🗑 Xóa', title: 'Xóa địa điểm', confirm: 'XÁC NHẬN XÓA', done: 'Đã xóa',
+    desc: 'Địa điểm sẽ bị ẩn khỏi game. Tồn kho và lịch sử vẫn giữ nguyên, có thể khôi phục lại.',
+  },
+  restore: {
+    status: 'active', btn: '↩ Khôi phục', title: 'Khôi phục địa điểm', confirm: 'XÁC NHẬN KHÔI PHỤC', done: 'Đã khôi phục',
+    desc: 'Địa điểm hiện lại trong game và người chơi chọn được.',
+  },
+};
+
+let managedStores = [];
+let pendingStoreAction = null; // { type, store }
+
+const ddRegionSelect = document.getElementById('dd-region');
+const ddRefreshBtn   = document.getElementById('dd-refresh-btn');
+const ddTableBody    = document.getElementById('dd-table-body');
+const ddModal        = document.getElementById('dd-modal');
+const ddModalTitle   = document.getElementById('dd-modal-title');
+const ddModalStore   = document.getElementById('dd-modal-store');
+const ddModalDesc    = document.getElementById('dd-modal-desc');
+const ddModalPass    = document.getElementById('dd-modal-password');
+const ddModalError   = document.getElementById('dd-modal-error');
+const ddModalCancel  = document.getElementById('dd-modal-cancel');
+const ddModalConfirm = document.getElementById('dd-modal-confirm');
+
+function normalizeStoreStatus(value) {
+  const v = String(value || '').trim().toLowerCase();
+  return v === 'locked' || v === 'deleted' ? v : 'active';
+}
+
+function ddMessageRow(text) {
+  if (!ddTableBody) return;
+  ddTableBody.innerHTML = '';
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = 4;
+  td.className = 'dd-empty';
+  td.textContent = text;
+  tr.appendChild(td);
+  ddTableBody.appendChild(tr);
+}
+
+function renderStoreManager() {
+  if (!ddTableBody) return;
+  const region = ddRegionSelect ? ddRegionSelect.value : 'ALL';
+  const list = managedStores.filter(
+    s => region === 'ALL' || String(s.region).trim().toUpperCase() === region
+  );
+  if (list.length === 0) {
+    ddMessageRow('Chưa có địa điểm nào trong khu vực này');
+    return;
+  }
+
+  ddTableBody.innerHTML = '';
+  list.forEach(store => {
+    const status = normalizeStoreStatus(store.status);
+    const info = STORE_STATUS_INFO[status];
+    const tr = document.createElement('tr');
+    if (status === 'deleted') tr.className = 'dd-row-deleted';
+
+    // Cột 1: Tên + mã địa điểm
+    const tdName = document.createElement('td');
+    const nameEl = document.createElement('div');
+    nameEl.className = 'dd-store-name';
+    nameEl.textContent = store.name;
+    const idEl = document.createElement('div');
+    idEl.className = 'dd-store-id';
+    idEl.textContent = `Mã: ${store.id}`;
+    tdName.append(nameEl, idEl);
+
+    // Cột 2: Khu vực
+    const tdRegion = document.createElement('td');
+    tdRegion.style.textAlign = 'center';
+    tdRegion.textContent = store.region;
+
+    // Cột 3: Trạng thái
+    const tdStatus = document.createElement('td');
+    tdStatus.style.textAlign = 'center';
+    const badge = document.createElement('span');
+    badge.className = `dd-status ${info.cls}`;
+    badge.textContent = info.label;
+    tdStatus.appendChild(badge);
+
+    // Cột 4: Nút thao tác
+    const tdActions = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.className = 'dd-actions';
+    const types = status === 'deleted'
+      ? ['restore']
+      : [status === 'locked' ? 'unlock' : 'lock', 'delete'];
+    types.forEach(type => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `dd-action-btn dd-action-${type}`;
+      btn.textContent = STORE_ACTIONS[type].btn;
+      btn.addEventListener('click', () => openStoreActionModal(type, store));
+      wrap.appendChild(btn);
+    });
+    tdActions.appendChild(wrap);
+
+    tr.append(tdName, tdRegion, tdStatus, tdActions);
+    ddTableBody.appendChild(tr);
+  });
+}
+
+// Tải danh sách địa điểm (kèm trạng thái) mới nhất từ Google Sheet
+async function loadStoreManager() {
+  ddMessageRow('Đang tải danh sách địa điểm...');
+  if (ddRefreshBtn) ddRefreshBtn.disabled = true;
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getStores`);
+    const data = await res.json();
+    if (data.success && Array.isArray(data.stores)) {
+      managedStores = data.stores;
+      renderStoreManager();
+    } else {
+      ddMessageRow('⚠️ Không đọc được danh sách địa điểm từ Google Sheet');
+    }
+  } catch (err) {
+    console.warn('[Admin] Lỗi tải danh sách địa điểm:', err);
+    ddMessageRow('❌ Mất kết nối Google Sheet, vui lòng bấm "Tải lại danh sách"');
+  } finally {
+    if (ddRefreshBtn) ddRefreshBtn.disabled = false;
+  }
+}
+
+function showStoreModalError(message) {
+  if (!ddModalError) return;
+  ddModalError.textContent = message;
+  ddModalError.classList.remove('hidden');
+}
+
+function openStoreActionModal(type, store) {
+  if (!ddModal) return;
+  const act = STORE_ACTIONS[type];
+  pendingStoreAction = { type, store };
+  ddModalTitle.textContent = act.title;
+  ddModalStore.textContent = `${store.name} (${store.region})`;
+  ddModalDesc.textContent = act.desc;
+  ddModalConfirm.textContent = act.confirm;
+  ddModalConfirm.classList.toggle('dd-confirm-danger', type === 'delete');
+  ddModalPass.value = '';
+  ddModalError.textContent = '';
+  ddModalError.classList.add('hidden');
+  ddModal.classList.remove('hidden');
+  setTimeout(() => ddModalPass.focus(), 50);
+}
+
+function closeStoreActionModal() {
+  if (!ddModal || ddModalConfirm.disabled) return;
+  pendingStoreAction = null;
+  ddModal.classList.add('hidden');
+}
+
+// Gửi yêu cầu Khóa / Mở khóa / Xóa / Khôi phục lên Apps Script
+async function submitStoreAction() {
+  if (!pendingStoreAction || ddModalConfirm.disabled) return;
+  const password = ddModalPass.value.trim();
+  if (!password) {
+    showStoreModalError('Vui lòng nhập mật khẩu');
+    return;
+  }
+
+  const { type, store } = pendingStoreAction;
+  const act = STORE_ACTIONS[type];
+  ddModalConfirm.disabled = true;
+  ddModalCancel.disabled = true;
+  ddModalConfirm.textContent = 'ĐANG XỬ LÝ...';
+  let succeeded = false;
+
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'setStoreStatus',
+        storeId: store.id,
+        status: act.status,
+        password,
+      }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      showStoreModalError(
+        data.error === 'WRONG_PASSWORD'
+          ? 'Sai mật khẩu, vui lòng thử lại'
+          : data.message || data.error || 'Không thực hiện được, vui lòng thử lại'
+      );
+      return;
+    }
+
+    if (Array.isArray(data.stores)) {
+      managedStores = data.stores;
+    } else {
+      const target = managedStores.find(s => s.id === store.id);
+      if (target) target.status = act.status;
+    }
+    renderStoreManager();
+    succeeded = true;
+  } catch (err) {
+    console.warn('[Admin] Lỗi cập nhật trạng thái địa điểm:', err);
+    showStoreModalError('Không kết nối được Google Sheet, vui lòng thử lại');
+  } finally {
+    ddModalConfirm.disabled = false;
+    ddModalCancel.disabled = false;
+    ddModalConfirm.textContent = act.confirm;
+  }
+
+  if (succeeded) {
+    closeStoreActionModal();
+    showAlert(`${act.done} địa điểm "${store.name}" thành công!`);
+  }
+}
+
+function initStoreManager() {
+  const tabBtn = document.querySelector('.tab-btn[data-tab="diadiem"]');
+  if (tabBtn) tabBtn.addEventListener('click', () => loadStoreManager());
+  if (ddRefreshBtn) ddRefreshBtn.addEventListener('click', () => loadStoreManager());
+  if (ddRegionSelect) ddRegionSelect.addEventListener('change', renderStoreManager);
+  if (ddModalCancel) ddModalCancel.addEventListener('click', closeStoreActionModal);
+  if (ddModalConfirm) ddModalConfirm.addEventListener('click', submitStoreAction);
+  if (ddModalPass) {
+    ddModalPass.addEventListener('input', () => ddModalError.classList.add('hidden'));
+    ddModalPass.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitStoreAction();
+      if (e.key === 'Escape') closeStoreActionModal();
+    });
+  }
+  if (ddModal) {
+    ddModal.addEventListener('click', (e) => {
+      if (e.target === ddModal) closeStoreActionModal();
+    });
+  }
+}
+
+initStoreManager();
